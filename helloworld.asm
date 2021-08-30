@@ -8,14 +8,15 @@
 Start:
     jsr $e544
 
-StartLoop:
     lda #$00
     sta $d020
     sta $d021
 
     lda #65
-    sta $0400
-    sta $0401
-    sta $0402
+    ldy #255
+StartLoop:
+    sta $0400,y
+    dey
+    bne StartLoop
 
     rts
