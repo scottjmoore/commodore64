@@ -58,10 +58,10 @@ Start:
     ldx #3
 StartLoop:
     sta $0400,y             ; Store the accumulator in screen memory + Y register
-    sta $d800,y
+    sta $d800,y             ; Store the accumulator in colour memory + Y register
     clc
     adc #1
-    iny                     ; decrement the Y register
+    iny                     ; increment the Y register
     bne StartLoop           ; If != 0 go back to StartLoop
     inc StartLoop + 2
     inc StartLoop + 5
@@ -70,12 +70,12 @@ StartLoop:
     
 StartLoopFinal:
     sta $0700,y             ; Store the accumulator in screen memory + Y register
-    sta $db00,y
+    sta $db00,y             ; Store the accumulator in colour memory + Y register
     clc
     adc #1
-    iny                     ; decrement the Y register
+    iny                     ; increment the Y register
     cpy #232
-    bne StartLoopFinal      ; If != 0 go back to StartLoop
+    bne StartLoopFinal      ; If != 232 go back to StartLoop
 
 SpriteLoop:
     lda $dc00
