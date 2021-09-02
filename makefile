@@ -13,7 +13,7 @@ clean:
 
 run:
 	make
-	x64 -8 helloworld.d64
+	x64sc -model ntsc -autostart "helloworld.d64:helloworld.prg"
 
 clean-run:
 	make clean
