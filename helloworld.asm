@@ -133,6 +133,14 @@ VSync:
     lda SpriteX + 1
     sta $d010
 
+    lda #$d0
+Scanline:
+    cmp $d012
+    bne Scanline
+
+    lda #$d1
+    sta $d001
+
     jmp SpriteLoop
     rts                     ; exit
 
