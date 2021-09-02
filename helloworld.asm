@@ -53,12 +53,29 @@ Start:
 	lda #$ff
 	sta $d015
 
-    lda #1                  ; Load accumulator with value for character 'A'
+    lda #0                  ; Load accumulator with zero
     ldy #0                  ; Set Y register to count 256 times
+    ldx #3
 StartLoop:
     sta $0400,y             ; Store the accumulator in screen memory + Y register
-    dey                     ; decrement the Y register
+    sta $d800,y
+    clc
+    adc #1
+    iny                     ; decrement the Y register
     bne StartLoop           ; If != 0 go back to StartLoop
+    inc StartLoop + 2
+    inc StartLoop + 5
+    dex
+    bne StartLoop
+    
+StartLoopFinal:
+    sta $0700,y             ; Store the accumulator in screen memory + Y register
+    sta $db00,y
+    clc
+    adc #1
+    iny                     ; decrement the Y register
+    cpy #232
+    bne StartLoopFinal      ; If != 0 go back to StartLoop
 
 SpriteLoop:
     lda $dc00
