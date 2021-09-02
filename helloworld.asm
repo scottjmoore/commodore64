@@ -61,21 +61,21 @@ StartLoop:
     bne StartLoop           ; If != 0 go back to StartLoop
 
 SpriteLoop:
-    lda $dc01
+    lda $dc00
     and #1<<0
     bne NoUp
     ldy SpriteY
     dey 
     sty SpriteY
 NoUp:
-    lda $dc01
+    lda $dc00
     and #1<<1
     bne NoDown
     ldy SpriteY
     iny
     sty SpriteY
 NoDown:
-    lda $dc01
+    lda $dc00
     and #1<<2
     bne NoLeft
     sec
@@ -86,7 +86,7 @@ NoDown:
     sbc #0
     sta SpriteX + 1
 NoLeft:
-    lda $dc01
+    lda $dc00
     and #1<<3
     bne NoRight
     clc
@@ -97,7 +97,7 @@ NoLeft:
     adc #0
     sta SpriteX + 1
 NoRight:
-    lda $dc01
+    lda $dc00
     and #1<<4
     bne NoFire
     rts
