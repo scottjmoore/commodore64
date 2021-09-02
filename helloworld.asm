@@ -125,6 +125,9 @@ VSync:
     cmp $d012
     bne VSync
 
+	lda #Sprite0 >> 6
+	sta $07F8
+
 	; positioning sprites
 	lda SpriteX
 	sta $d000	; #0. sprite X low byte
@@ -133,11 +136,13 @@ VSync:
     lda SpriteX + 1
     sta $d010
 
-    lda #$d0
+    lda #$cf
 Scanline:
     cmp $d012
     bne Scanline
 
+	lda #Sprite1 >> 6
+	sta $07F8
     lda #$d1
     sta $d001
 
@@ -172,6 +177,12 @@ sprite0:
     db $15, $14, $00
     db $3C, $3C, $00
     db $3F, $3F, $00
+	db 0
+
+sprite1:
+    db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $55, $00
+	db $03, $57, $00, $0F, $FF, $C0, $0F, $FF, $C0, $02, $AA, $00, $0D, $FD, $C0, $3D, $FD, $F0, $35, $FD, $70
+	db $B5, $75, $78, $A5, $55, $68, $05, $55, $40, $05, $55, $40, $05, $45, $40, $01, $55, $00, $0F, $FF, $C0
 	db 0
 
 ; 10 SYS2061
