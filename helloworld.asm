@@ -5,631 +5,362 @@
     db $9e," 2064"          ; SYS 2064 ($0810)
     db $00,$00,$00,$00,$00  ; zero padding
 
+    struct  Sprite
+        y:  db $00
+        x:  dw $0000
+        ptr:    dw $0000
+    endstruct
+
 Start:
+    jsr InitScreen
+    jsr InitInterrupts
+
+Loop:
+    lda $dc00
+    and #1<<4
+    bne NoFire
+    jmp Exit
+NoFire:
+    jmp Loop
+
+Exit:
+    jmp ($fffc)             ; Jump to code stored in 6502 reset vector
+
+InitScreen:
     jsr $e544               ; Clear the screen
 
     lda #$00                ; Load accumulator with colour value for black
     sta $d020               ; Set border colour to black
     sta $d021               ; Set background colour 0 to black
 
-	; set sprite multicolors
-	lda #$02
-	sta $d025
-	lda #$06
-	sta $d026
-
-	; colorize sprites
-	lda #$0A
-	sta $d027
-
-	; positioning sprites
-	lda SpriteX
-	sta $d000	; #0. sprite X low byte
-	lda SpriteY
-	sta $d001	; #0. sprite Y
-
-	; X coordinate high bits
-	lda #$00
-	sta $d010
-
-	; expand sprites
-	lda #$01
-	sta $d01d
-    sta $d017
-
-	; set multicolor flags
-	lda #$03
-	sta $d01c
-
-	; set screen-sprite priority flags
-	lda #$00
-	sta $d01b
-
-	; set sprite pointers
-	lda #Sprite0 >> 6
-	sta $07F8
-
-	; turn on sprites
-	lda #$ff
-	sta $d015
-
     lda #0                  ; Load accumulator with zero
     ldy #0                  ; Set Y register to count 256 times
     ldx #3
-StartLoop:
+InitScreenLoop1:
     sta $0400,y             ; Store the accumulator in screen memory + Y register
     sta $d800,y             ; Store the accumulator in colour memory + Y register
     clc
     adc #1
     iny                     ; increment the Y register
-    bne StartLoop           ; If != 0 go back to StartLoop
-    inc StartLoop + 2
-    inc StartLoop + 5
+    bne InitScreenLoop1           ; If != 0 go back to StartLoop
+    inc InitScreenLoop1 + 2
+    inc InitScreenLoop1 + 5
     dex
-    bne StartLoop
+    bne InitScreenLoop1
     
-StartLoopFinal:
+InitScreenLoop2:
     sta $0700,y             ; Store the accumulator in screen memory + Y register
     sta $db00,y             ; Store the accumulator in colour memory + Y register
     clc
     adc #1
     iny                     ; increment the Y register
     cpy #232
-    bne StartLoopFinal      ; If != 232 go back to StartLoop
+    bne InitScreenLoop2      ; If != 232 go back to StartLoop
+    rts 
 
-SpriteLoop:
-    lda $dc00
-    and #1<<0
-    bne NoUp
-    ldy SpriteY
-    dey 
-    sty SpriteY
-NoUp:
-    lda $dc00
-    and #1<<1
-    bne NoDown
-    ldy SpriteY
-    iny
-    sty SpriteY
-NoDown:
-    lda $dc00
-    and #1<<2
-    bne NoLeft
-    sec
-    lda SpriteX
-    sbc #1
-    sta SpriteX
-    lda SpriteX + 1
-    sbc #0
-    sta SpriteX + 1
-NoLeft:
-    lda $dc00
-    and #1<<3
-    bne NoRight
-    clc
-    lda SpriteX
-    adc #1
-    sta SpriteX
-    lda SpriteX + 1
-    adc #0
-    sta SpriteX + 1
-NoRight:
-    lda $dc00
-    and #1<<4
-    bne NoFire
+RasterStart     equ 49
+RasterSize      equ 16
+InitInterrupts:
+    sei
+    lda #%01111111
+    sta $dc0d
+    and $d011
+    sta $d011
+    lda $dc0d
+    lda $dd0d
+    lda #RasterStart + (RasterSize * 0)
+    sta $d012
+    lda #<IrqService1
+    sta $0314
+    lda #>IrqService1
+    sta $0315
+    lda #%00000001
+    sta $d01a
+    cli
     rts
-NoFire:
 
+IrqService1:
+    lda #$01
+    sta $d020
+    lda #RasterStart + (RasterSize * 1)
+    sta $d012
+    lda #<IrqService2
+    sta $0314
+    lda #>IrqService2
+    sta $0315
+    asl $d019
+    jmp $ea81
+
+IrqService2:
+    lda #$02
+    sta $d020
+    lda #RasterStart + (RasterSize * 2)
+    sta $d012
+    lda #<IrqService3
+    sta $0314
+    lda #>IrqService3
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService3:
+    lda #$03
+    sta $d020
+    lda #RasterStart + (RasterSize * 3)
+    sta $d012
+    lda #<IrqService4
+    sta $0314
+    lda #>IrqService4
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService4:
+    lda #$04
+    sta $d020
+    lda #RasterStart + (RasterSize * 4)
+    sta $d012
+    lda #<IrqService5
+    sta $0314
+    lda #>IrqService5
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService5:
+    lda #$05
+    sta $d020
+    lda #RasterStart + (RasterSize * 5)
+    sta $d012
+    lda #<IrqService6
+    sta $0314
+    lda #>IrqService6
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService6:
+    lda #$06
+    sta $d020
+    lda #RasterStart + (RasterSize * 6)
+    sta $d012
+    lda #<IrqService7
+    sta $0314
+    lda #>IrqService7
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService7:
+    lda #$07
+    sta $d020
+    lda #RasterStart + (RasterSize * 7)
+    sta $d012
+    lda #<IrqService8
+    sta $0314
+    lda #>IrqService8
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService8:
+    lda #$08
+    sta $d020
+    lda #RasterStart + (RasterSize * 8)
+    sta $d012
+    lda #<IrqService9
+    sta $0314
+    lda #>IrqService9
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService9:
+    lda #$09
+    sta $d020
+    lda #RasterStart + (RasterSize * 9)
+    sta $d012
+    lda #<IrqService10
+    sta $0314
+    lda #>IrqService10
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService10:
+    lda #$0a
+    sta $d020
+    lda #RasterStart + (RasterSize * 10)
+    sta $d012
+    lda #<IrqService11
+    sta $0314
+    lda #>IrqService11
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService11:
+    lda #$0b
+    sta $d020
+    lda #RasterStart + (RasterSize * 11)
+    sta $d012
+    lda #<IrqService12
+    sta $0314
+    lda #>IrqService12
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqService12:
+    lda #$0c
+    sta $d020
+    lda #RasterStart + (RasterSize * 12)
+    sta $d012
+    lda #<IrqServiceLast
+    sta $0314
+    lda #>IrqServiceLast
+    sta $0315
+    asl $d019
+    jmp $ea81
+    
+IrqServiceLast:
     lda #$00
-VSync:
-    cmp $d012
-    bne VSync
+    sta $d020
+    lda #RasterStart + (RasterSize * 0)
+    sta $d012
+    lda #<IrqService1
+    sta $0314
+    lda #>IrqService1
+    sta $0315
+    asl $d019
+    jmp $ea31
 
-	lda #Sprite0 >> 6
-	sta $07F8
+SpriteList1:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-	; positioning sprites
-	lda SpriteX
-	sta $d000	; #0. sprite X low byte
-	lda SpriteY
-	sta $d001	; #0. sprite Y
-    lda SpriteX + 1
-    sta $d010
+SpriteList2:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-    lda #$cf
-Scanline:
-    cmp $d012
-    bne Scanline
+SpriteList3:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-	lda #Sprite1 >> 6
-	sta $07F8
-    lda #$d1
-    sta $d001
+SpriteList4:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-    jmp SpriteLoop
-    rts                     ; exit
+SpriteList5:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-SpriteX:
-    dw $20
-SpriteY:
-    db $30
+SpriteList6:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-    align 6
-sprite0:
-	db $00, $00, $00
-    db $00, $00, $00
-    db $00, $00, $00
-    db $00, $00, $00
-    db $00, $00, $00
-    db $01, $50, $00
-    db $05, $55, $00
-	db $0F, $E8, $00
-    db $3B, $AE, $00
-    db $3A, $EB, $80
-    db $3E, $AF, $00
-    db $02, $AA, $00
-    db $0F, $F0, $00
-    db $3F, $5C, $00
-	db $3D, $64, $00
-    db $3F, $55, $00
-    db $1E, $95, $00
-    db $16, $55, $00
-    db $15, $14, $00
-    db $3C, $3C, $00
-    db $3F, $3F, $00
-	db 0
+SpriteList7:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-sprite1:
-    db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $55, $00
-	db $03, $57, $00, $0F, $FF, $C0, $0F, $FF, $C0, $02, $AA, $00, $0D, $FD, $C0, $3D, $FD, $F0, $35, $FD, $70
-	db $B5, $75, $78, $A5, $55, $68, $05, $55, $40, $05, $55, $40, $05, $45, $40, $01, $55, $00, $0F, $FF, $C0
-	db 0
+SpriteList8:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-; 10 SYS2061
-; *=$0801
-; 	BYTE $0B, $08, $0A, $00, $9E, $32, $30, $36, $31, $00, $00, $00
+SpriteList9:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-; *=$080d
-; 	; set to 25 line text mode and turn on the screen
-; 	lda #$1B
-; 	sta $D011
+SpriteList10:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-; 	; disable SHIFT-Commodore
-; 	lda #$80
-; 	sta $0291
+SpriteList11:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-; 	; set screen memory ($0400) and charset bitmap offset ($2000)
-; 	lda #$18
-; 	sta $D018
+SpriteList12:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
 
-; 	; set border color
-; 	lda #$00
-; 	sta $D020
-	
-; 	; set background color
-; 	lda #$00
-; 	sta $D021
-
-; 	; draw screen
-; 	lda #$00
-; 	sta $fb
-; 	sta $fd
-; 	sta $f7
-
-; 	lda #$28
-; 	sta $fc
-
-; 	lda #$04
-; 	sta $fe
-
-; 	lda #$e8
-; 	sta $f9
-; 	lda #$2b
-; 	sta $fa
-
-; 	lda #$d8
-; 	sta $f8
-
-; 	ldx #$00
-; 	ldy #$00
-; 	lda ($fb),y
-; 	sta ($fd),y
-; 	lda ($f9),y
-; 	sta ($f7),y
-; 	iny
-; 	bne *-9
-
-; 	inc $fc
-; 	inc $fe
-; 	inc $fa
-; 	inc $f8
-
-; 	inx
-; 	cpx #$04
-; 	bne *-24
-
-; 	; set sprite multicolors
-; 	lda #$02
-; 	sta $d025
-; 	lda #$06
-; 	sta $d026
-
-; 	; colorize sprites
-; 	lda #$0A
-; 	sta $d027
-; 	lda #$0A
-; 	sta $d028
-
-; 	; positioning sprites
-; 	lda #$46
-; 	sta $d000	; #0. sprite X low byte
-; 	lda #$DD
-; 	sta $d001	; #0. sprite Y
-; 	lda #$81
-; 	sta $d002	; #1. sprite X low byte
-; 	lda #$BA
-; 	sta $d003	; #1. sprite Y
-
-; 	; X coordinate high bits
-; 	lda #$00
-; 	sta $d010
-
-; 	; expand sprites
-; 	lda #$00
-; 	sta $d01d
-; 	lda #$00
-; 	sta $d017
-
-; 	; set multicolor flags
-; 	lda #$03
-; 	sta $d01c
-
-; 	; set screen-sprite priority flags
-; 	lda #$00
-; 	sta $d01b
-
-; 	; set sprite pointers
-; 	lda #$28
-; 	sta $07F8
-; 	lda #$29
-; 	sta $07F9
-
-; 	; turn on sprites
-; 	lda #$03
-; 	sta $d015
-
-; 	; wait for keypress
-; 	lda $c6
-; 	beq *-2
-
-; 	rts
-
-; ; Sprite bitmaps 2 x 64 bytes
-; *=$0A00
-; ; sprite #0
-; 	BYTE $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $50, $00, $05, $55, $00
-; 	BYTE $0F, $E8, $00, $3B, $AE, $00, $3A, $EB, $80, $3E, $AF, $00, $02, $AA, $00, $0F, $F0, $00, $3F, $5C, $00
-; 	BYTE $3D, $64, $00, $3F, $55, $00, $1E, $95, $00, $16, $55, $00, $15, $14, $00, $3C, $3C, $00, $3F, $3F, $00
-; 	BYTE 0
-
-; ; sprite #1
-; 	BYTE $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $50, $00, $05, $55, $00
-; 	BYTE $0F, $E8, $00, $3B, $AE, $00, $3A, $EB, $80, $3E, $AF, $00, $02, $AA, $00, $0F, $F0, $00, $3F, $5C, $00
-; 	BYTE $3D, $64, $00, $3F, $55, $00, $1E, $95, $00, $16, $55, $00, $15, $14, $00, $3C, $3C, $00, $3F, $3F, $00
-; 	BYTE 0
-
-
-; ; Character bitmap definitions 2k
-; *=$2000
-; 	BYTE	$3C, $66, $6E, $6E, $60, $62, $3C, $00
-; 	BYTE	$18, $3C, $66, $7E, $66, $66, $66, $00
-; 	BYTE	$7C, $66, $66, $7C, $66, $66, $7C, $00
-; 	BYTE	$3C, $66, $60, $60, $60, $66, $3C, $00
-; 	BYTE	$78, $6C, $66, $66, $66, $6C, $78, $00
-; 	BYTE	$7E, $60, $60, $78, $60, $60, $7E, $00
-; 	BYTE	$7E, $60, $60, $78, $60, $60, $60, $00
-; 	BYTE	$3C, $66, $60, $6E, $66, $66, $3C, $00
-; 	BYTE	$66, $66, $66, $7E, $66, $66, $66, $00
-; 	BYTE	$3C, $18, $18, $18, $18, $18, $3C, $00
-; 	BYTE	$1E, $0C, $0C, $0C, $0C, $6C, $38, $00
-; 	BYTE	$66, $6C, $78, $70, $78, $6C, $66, $00
-; 	BYTE	$60, $60, $60, $60, $60, $60, $7E, $00
-; 	BYTE	$63, $77, $7F, $6B, $63, $63, $63, $00
-; 	BYTE	$66, $76, $7E, $7E, $6E, $66, $66, $00
-; 	BYTE	$3C, $66, $66, $66, $66, $66, $3C, $00
-; 	BYTE	$7C, $66, $66, $7C, $60, $60, $60, $00
-; 	BYTE	$3C, $66, $66, $66, $66, $3C, $0E, $00
-; 	BYTE	$7C, $66, $66, $7C, $78, $6C, $66, $00
-; 	BYTE	$3C, $66, $60, $3C, $06, $66, $3C, $00
-; 	BYTE	$7E, $18, $18, $18, $18, $18, $18, $00
-; 	BYTE	$66, $66, $66, $66, $66, $66, $3C, $00
-; 	BYTE	$66, $66, $66, $66, $66, $3C, $18, $00
-; 	BYTE	$63, $63, $63, $6B, $7F, $77, $63, $00
-; 	BYTE	$66, $66, $3C, $18, $3C, $66, $66, $00
-; 	BYTE	$66, $66, $66, $3C, $18, $18, $18, $00
-; 	BYTE	$7E, $06, $0C, $18, $30, $60, $7E, $00
-; 	BYTE	$3C, $30, $30, $30, $30, $30, $3C, $00
-; 	BYTE	$0C, $12, $30, $7C, $30, $62, $FC, $00
-; 	BYTE	$3C, $0C, $0C, $0C, $0C, $0C, $3C, $00
-; 	BYTE	$00, $18, $3C, $7E, $18, $18, $18, $18
-; 	BYTE	$00, $10, $30, $7F, $7F, $30, $10, $00
-; 	BYTE	$00, $00, $00, $00, $00, $00, $00, $00
-; 	BYTE	$18, $18, $18, $18, $00, $00, $18, $00
-; 	BYTE	$66, $66, $66, $00, $00, $00, $00, $00
-; 	BYTE	$66, $66, $FF, $66, $FF, $66, $66, $00
-; 	BYTE	$18, $3E, $60, $3C, $06, $7C, $18, $00
-; 	BYTE	$62, $66, $0C, $18, $30, $66, $46, $00
-; 	BYTE	$3C, $66, $3C, $38, $67, $66, $3F, $00
-; 	BYTE	$06, $0C, $18, $00, $00, $00, $00, $00
-; 	BYTE	$0C, $18, $30, $30, $30, $18, $0C, $00
-; 	BYTE	$30, $18, $0C, $0C, $0C, $18, $30, $00
-; 	BYTE	$00, $66, $3C, $FF, $3C, $66, $00, $00
-; 	BYTE	$00, $18, $18, $7E, $18, $18, $00, $00
-; 	BYTE	$00, $00, $00, $00, $00, $18, $18, $30
-; 	BYTE	$00, $00, $00, $7E, $00, $00, $00, $00
-; 	BYTE	$00, $00, $00, $00, $00, $18, $18, $00
-; 	BYTE	$00, $03, $06, $0C, $18, $30, $60, $00
-; 	BYTE	$3C, $66, $6E, $76, $66, $66, $3C, $00
-; 	BYTE	$18, $18, $38, $18, $18, $18, $7E, $00
-; 	BYTE	$3C, $66, $06, $0C, $30, $60, $7E, $00
-; 	BYTE	$3C, $66, $06, $1C, $06, $66, $3C, $00
-; 	BYTE	$06, $0E, $1E, $66, $7F, $06, $06, $00
-; 	BYTE	$7E, $60, $7C, $06, $06, $66, $3C, $00
-; 	BYTE	$3C, $66, $60, $7C, $66, $66, $3C, $00
-; 	BYTE	$7E, $66, $0C, $18, $18, $18, $18, $00
-; 	BYTE	$3C, $66, $66, $3C, $66, $66, $3C, $00
-; 	BYTE	$3C, $66, $66, $3E, $06, $66, $3C, $00
-; 	BYTE	$00, $00, $18, $00, $00, $18, $00, $00
-; 	BYTE	$00, $00, $18, $00, $00, $18, $18, $30
-; 	BYTE	$0E, $18, $30, $60, $30, $18, $0E, $00
-; 	BYTE	$00, $00, $7E, $00, $7E, $00, $00, $00
-; 	BYTE	$70, $18, $0C, $06, $0C, $18, $70, $00
-; 	BYTE	$3C, $66, $06, $0C, $18, $00, $18, $00
-; 	BYTE	$00, $00, $00, $FF, $FF, $00, $00, $00
-; 	BYTE	$08, $1C, $3E, $7F, $7F, $1C, $3E, $00
-; 	BYTE	$18, $18, $18, $18, $18, $18, $18, $18
-; 	BYTE	$00, $00, $00, $FF, $FF, $C3, $66, $3C
-; 	BYTE	$00, $00, $FF, $FF, $00, $00, $00, $00
-; 	BYTE	$00, $FF, $FF, $00, $00, $00, $00, $00
-; 	BYTE	$00, $00, $00, $00, $FF, $FF, $00, $00
-; 	BYTE	$30, $30, $30, $30, $30, $30, $30, $30
-; 	BYTE	$0C, $0C, $0C, $0C, $0C, $0C, $0C, $0C
-; 	BYTE	$00, $00, $00, $E0, $F0, $38, $18, $18
-; 	BYTE	$18, $18, $1C, $0F, $07, $00, $00, $00
-; 	BYTE	$18, $18, $38, $F0, $E0, $00, $00, $00
-; 	BYTE	$C0, $C0, $C0, $C0, $C0, $C0, $FF, $FF
-; 	BYTE	$C0, $E0, $70, $38, $1C, $0E, $07, $03
-; 	BYTE	$03, $07, $0E, $1C, $38, $70, $E0, $C0
-; 	BYTE	$FF, $FF, $C0, $C0, $C0, $C0, $C0, $C0
-; 	BYTE	$FF, $FF, $03, $03, $03, $03, $03, $03
-; 	BYTE	$00, $3C, $7E, $7E, $7E, $7E, $3C, $00
-; 	BYTE	$00, $00, $00, $00, $00, $FF, $FF, $00
-; 	BYTE	$36, $7F, $7F, $7F, $3E, $1C, $08, $00
-; 	BYTE	$60, $60, $60, $60, $60, $60, $60, $60
-; 	BYTE	$00, $00, $00, $07, $0F, $1C, $18, $18
-; 	BYTE	$C3, $E7, $7E, $3C, $3C, $7E, $E7, $C3
-; 	BYTE	$00, $3C, $7E, $66, $66, $7E, $3C, $00
-; 	BYTE	$18, $18, $66, $66, $18, $18, $3C, $00
-; 	BYTE	$06, $06, $06, $06, $06, $06, $06, $06
-; 	BYTE	$08, $1C, $3E, $7F, $3E, $1C, $08, $00
-; 	BYTE	$18, $18, $18, $FF, $FF, $18, $18, $18
-; 	BYTE	$C0, $C0, $30, $30, $C0, $C0, $30, $30
-; 	BYTE	$18, $18, $18, $18, $18, $18, $18, $18
-; 	BYTE	$00, $00, $03, $3E, $76, $36, $36, $00
-; 	BYTE	$FF, $7F, $3F, $1F, $0F, $07, $03, $01
-; 	BYTE	$00, $00, $00, $00, $00, $00, $00, $00
-; 	BYTE	$F0, $F0, $F0, $F0, $F0, $F0, $F0, $F0
-; 	BYTE	$00, $00, $00, $00, $FF, $FF, $FF, $FF
-; 	BYTE	$FF, $00, $00, $00, $00, $00, $00, $00
-; 	BYTE	$00, $00, $00, $00, $00, $00, $00, $FF
-; 	BYTE	$C0, $C0, $C0, $C0, $C0, $C0, $C0, $C0
-; 	BYTE	$CC, $CC, $33, $33, $CC, $CC, $33, $33
-; 	BYTE	$03, $03, $03, $03, $03, $03, $03, $03
-; 	BYTE	$00, $00, $00, $00, $CC, $CC, $33, $33
-; 	BYTE	$FF, $FE, $FC, $F8, $F0, $E0, $C0, $80
-; 	BYTE	$03, $03, $03, $03, $03, $03, $03, $03
-; 	BYTE	$60, $60, $60, $7F, $7F, $60, $60, $60
-; 	BYTE	$00, $00, $00, $00, $0F, $0F, $0F, $0F
-; 	BYTE	$18, $18, $18, $1F, $1F, $00, $00, $00
-; 	BYTE	$00, $00, $00, $F8, $F8, $18, $18, $18
-; 	BYTE	$00, $00, $00, $00, $00, $00, $FF, $FF
-; 	BYTE	$00, $00, $00, $1F, $1F, $18, $18, $18
-; 	BYTE	$18, $18, $18, $FF, $FF, $00, $00, $00
-; 	BYTE	$00, $00, $00, $FF, $FF, $18, $18, $18
-; 	BYTE	$06, $06, $06, $FE, $FE, $06, $06, $06
-; 	BYTE	$C0, $C0, $C0, $C0, $C0, $C0, $C0, $C0
-; 	BYTE	$E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0
-; 	BYTE	$07, $07, $07, $07, $07, $07, $07, $07
-; 	BYTE	$FF, $FF, $00, $00, $00, $00, $00, $00
-; 	BYTE	$FF, $FF, $FF, $00, $00, $00, $00, $00
-; 	BYTE	$00, $00, $00, $00, $00, $FF, $FF, $FF
-; 	BYTE	$03, $03, $03, $03, $03, $03, $FF, $FF
-; 	BYTE	$00, $00, $00, $00, $F0, $F0, $F0, $F0
-; 	BYTE	$0F, $0F, $0F, $0F, $00, $00, $00, $00
-; 	BYTE	$18, $18, $18, $F8, $F8, $00, $00, $00
-; 	BYTE	$F0, $F0, $F0, $F0, $00, $00, $00, $00
-; 	BYTE	$F0, $F0, $F0, $F0, $0F, $0F, $0F, $0F
-; 	BYTE	$C3, $99, $91, $91, $9F, $99, $C3, $FF
-; 	BYTE	$FF, $FF, $38, $6C, $C6, $83, $FF, $FF
-; 	BYTE	$FF, $38, $6C, $C6, $83, $FF, $FF, $00
-; 	BYTE	$38, $6C, $C6, $83, $FF, $FF, $00, $00
-; 	BYTE	$6C, $C6, $83, $FF, $FF, $00, $00, $00
-; 	BYTE	$C6, $83, $FF, $FF, $00, $00, $00, $00
-; 	BYTE	$83, $FF, $FF, $00, $00, $00, $00, $00
-; 	BYTE	$FF, $FF, $00, $00, $00, $00, $00, $00
-; 	BYTE	$FF, $00, $00, $00, $00, $00, $00, $00
-; 	BYTE	$00, $FF, $FF, $38, $6C, $C6, $83, $FF
-; 	BYTE	$00, $00, $FF, $FF, $38, $6C, $C6, $83
-; 	BYTE	$00, $00, $00, $FF, $FF, $38, $6C, $C6
-; 	BYTE	$00, $00, $00, $00, $FF, $FF, $38, $6C
-; 	BYTE	$00, $00, $00, $00, $00, $FF, $FF, $38
-; 	BYTE	$00, $00, $00, $00, $00, $00, $FF, $FF
-; 	BYTE	$00, $00, $00, $00, $00, $00, $00, $FF
-; 	BYTE	$00, $00, $00, $00, $81, $FF, $81, $81
-; 	BYTE	$C3, $99, $99, $99, $99, $C3, $F1, $FF
-; 	BYTE	$83, $99, $99, $83, $87, $93, $99, $FF
-; 	BYTE	$C3, $99, $9F, $C3, $F9, $99, $C3, $FF
-; 	BYTE	$81, $E7, $E7, $E7, $E7, $E7, $E7, $FF
-; 	BYTE	$99, $99, $99, $99, $99, $99, $C3, $FF
-; 	BYTE	$99, $99, $99, $99, $99, $C3, $E7, $FF
-; 	BYTE	$9C, $9C, $9C, $94, $80, $88, $9C, $FF
-; 	BYTE	$99, $99, $C3, $E7, $C3, $99, $99, $FF
-; 	BYTE	$99, $99, $99, $C3, $E7, $E7, $E7, $FF
-; 	BYTE	$81, $F9, $F3, $E7, $CF, $9F, $81, $FF
-; 	BYTE	$C3, $CF, $CF, $CF, $CF, $CF, $C3, $FF
-; 	BYTE	$F3, $ED, $CF, $83, $CF, $9D, $03, $FF
-; 	BYTE	$C3, $F3, $F3, $F3, $F3, $F3, $C3, $FF
-; 	BYTE	$FF, $E7, $C3, $81, $E7, $E7, $E7, $E7
-; 	BYTE	$FF, $EF, $CF, $80, $80, $CF, $EF, $FF
-; 	BYTE	$81, $FF, $81, $81, $81, $FF, $81, $81
-; 	BYTE	$E7, $E7, $E7, $E7, $FF, $FF, $E7, $FF
-; 	BYTE	$99, $99, $99, $FF, $FF, $FF, $FF, $FF
-; 	BYTE	$99, $99, $00, $99, $00, $99, $99, $FF
-; 	BYTE	$E7, $C1, $9F, $C3, $F9, $83, $E7, $FF
-; 	BYTE	$9D, $99, $F3, $E7, $CF, $99, $B9, $FF
-; 	BYTE	$C3, $99, $C3, $C7, $98, $99, $C0, $FF
-; 	BYTE	$F9, $F3, $E7, $FF, $FF, $FF, $FF, $FF
-; 	BYTE	$F3, $E7, $CF, $CF, $CF, $E7, $F3, $FF
-; 	BYTE	$CF, $E7, $F3, $F3, $F3, $E7, $CF, $FF
-; 	BYTE	$FF, $00, $00, $00, $00, $00, $00, $00
-; 	BYTE	$FF, $E7, $E7, $81, $E7, $E7, $FF, $FF
-; 	BYTE	$FF, $FF, $FF, $FF, $FF, $E7, $E7, $CF
-; 	BYTE	$00, $00, $00, $FF, $FF, $18, $24, $42
-; 	BYTE	$FF, $FF, $FF, $FF, $FF, $E7, $E7, $FF
-; 	BYTE	$81, $FF, $FF, $00, $00, $00, $00, $00
-; 	BYTE	$C3, $99, $91, $89, $99, $99, $C3, $FF
-; 	BYTE	$E7, $E7, $C7, $E7, $E7, $E7, $81, $FF
-; 	BYTE	$C3, $99, $F9, $F3, $CF, $9F, $81, $FF
-; 	BYTE	$C3, $99, $F9, $E3, $F9, $99, $C3, $FF
-; 	BYTE	$F9, $F1, $E1, $99, $80, $F9, $F9, $FF
-; 	BYTE	$81, $9F, $83, $F9, $F9, $99, $C3, $FF
-; 	BYTE	$C3, $99, $9F, $83, $99, $99, $C3, $FF
-; 	BYTE	$81, $99, $F3, $E7, $E7, $E7, $E7, $FF
-; 	BYTE	$C3, $99, $99, $C3, $99, $99, $C3, $FF
-; 	BYTE	$C3, $99, $99, $C1, $F9, $99, $C3, $FF
-; 	BYTE	$04, $04, $FC, $04, $04, $04, $FC, $04
-; 	BYTE	$FF, $FF, $E7, $FF, $FF, $E7, $E7, $CF
-; 	BYTE	$F1, $E7, $CF, $9F, $CF, $E7, $F1, $FF
-; 	BYTE	$20, $20, $3F, $20, $20, $20, $3F, $20
-; 	BYTE	$8F, $E7, $F3, $F9, $F3, $E7, $8F, $FF
-; 	BYTE	$C3, $99, $F9, $F3, $E7, $FF, $E7, $FF
-; 	BYTE	$00, $00, $FF, $FF, $18, $24, $42, $81
-; 	BYTE	$F7, $E3, $C1, $80, $80, $E3, $C1, $FF
-; 	BYTE	$FF, $18, $24, $42, $81, $FF, $FF, $00
-; 	BYTE	$00, $00, $00, $00, $FF, $FF, $18, $24
-; 	BYTE	$00, $00, $00, $00, $00, $FF, $FF, $18
-; 	BYTE	$00, $00, $00, $00, $00, $00, $FF, $FF
-; 	BYTE	$00, $FF, $FF, $18, $24, $42, $81, $FF
-; 	BYTE	$FF, $FF, $18, $24, $42, $81, $FF, $FF
-; 	BYTE	$24, $42, $81, $FF, $FF, $00, $00, $00
-; 	BYTE	$FF, $FF, $FF, $1F, $0F, $C7, $E7, $E7
-; 	BYTE	$E7, $E7, $E3, $F0, $F8, $FF, $FF, $FF
-; 	BYTE	$E7, $E7, $C7, $0F, $1F, $FF, $FF, $FF
-; 	BYTE	$3F, $3F, $3F, $3F, $3F, $3F, $00, $00
-; 	BYTE	$3F, $1F, $8F, $C7, $E3, $F1, $F8, $FC
-; 	BYTE	$FC, $F8, $F1, $E3, $C7, $8F, $1F, $3F
-; 	BYTE	$00, $00, $3F, $3F, $3F, $3F, $3F, $3F
-; 	BYTE	$00, $00, $FC, $FC, $FC, $FC, $FC, $FC
-; 	BYTE	$FF, $C3, $81, $81, $81, $81, $C3, $FF
-; 	BYTE	$FF, $FF, $18, $24, $42, $81, $FF, $FF
-; 	BYTE	$C9, $80, $80, $80, $C1, $E3, $F7, $FF
-; 	BYTE	$00, $00, $00, $00, $00, $00, $00, $FF
-; 	BYTE	$FF, $FF, $FF, $F8, $F0, $E3, $E7, $E7
-; 	BYTE	$FF, $FF, $00, $00, $00, $00, $00, $00
-; 	BYTE	$FF, $C3, $81, $99, $99, $81, $C3, $FF
-; 	BYTE	$E7, $E7, $99, $99, $E7, $E7, $C3, $FF
-; 	BYTE	$42, $81, $FF, $FF, $00, $00, $00, $00
-; 	BYTE	$F7, $E3, $C1, $80, $C1, $E3, $F7, $FF
-; 	BYTE	$E7, $E7, $E7, $00, $00, $E7, $E7, $E7
-; 	BYTE	$3F, $3F, $CF, $CF, $3F, $3F, $CF, $CF
-; 	BYTE	$18, $24, $42, $81, $FF, $FF, $00, $00
-; 	BYTE	$FF, $FF, $FC, $C1, $89, $C9, $C9, $FF
-; 	BYTE	$00, $80, $C0, $E0, $F0, $F8, $FC, $FE
-; 	BYTE	$3C, $7E, $7F, $7C, $3E, $7F, $3F, $66
-; 	BYTE	$0F, $0F, $0F, $0F, $0F, $0F, $0F, $0F
-; 	BYTE	$FF, $FF, $FF, $FF, $00, $00, $00, $00
-; 	BYTE	$00, $FF, $FF, $FF, $FF, $FF, $FF, $FF
-; 	BYTE	$FF, $FF, $FF, $FF, $FF, $FF, $FF, $00
-; 	BYTE	$3F, $3F, $3F, $3F, $3F, $3F, $3F, $3F
-; 	BYTE	$33, $33, $CC, $CC, $33, $33, $CC, $CC
-; 	BYTE	$FC, $FC, $FC, $FC, $FC, $FC, $FC, $FC
-; 	BYTE	$FF, $FF, $FF, $FF, $33, $33, $CC, $CC
-; 	BYTE	$00, $01, $03, $07, $0F, $1F, $3F, $7F
-; 	BYTE	$FC, $FC, $FC, $FC, $FC, $FC, $FC, $FC
-; 	BYTE	$E7, $E7, $E7, $E0, $E0, $E7, $E7, $E7
-; 	BYTE	$FF, $FF, $FF, $FF, $F0, $F0, $F0, $F0
-; 	BYTE	$E7, $E7, $E7, $E0, $E0, $FF, $FF, $FF
-; 	BYTE	$FF, $FF, $FF, $07, $07, $E7, $E7, $E7
-; 	BYTE	$FF, $FF, $FF, $FF, $FF, $FF, $00, $00
-; 	BYTE	$FF, $FF, $FF, $E0, $E0, $E7, $E7, $E7
-; 	BYTE	$E7, $E7, $E7, $00, $00, $FF, $FF, $FF
-; 	BYTE	$FF, $FF, $FF, $00, $00, $E7, $E7, $E7
-; 	BYTE	$E7, $E7, $E7, $07, $07, $E7, $E7, $E7
-; 	BYTE	$3F, $3F, $3F, $3F, $3F, $3F, $3F, $3F
-; 	BYTE	$1F, $1F, $1F, $1F, $1F, $1F, $1F, $1F
-; 	BYTE	$F8, $F8, $F8, $F8, $F8, $F8, $F8, $F8
-; 	BYTE	$00, $00, $FF, $FF, $FF, $FF, $FF, $FF
-; 	BYTE	$00, $00, $00, $FF, $FF, $FF, $FF, $FF
-; 	BYTE	$FF, $FF, $FF, $FF, $FF, $00, $00, $00
-; 	BYTE	$FC, $FC, $FC, $FC, $FC, $FC, $00, $00
-; 	BYTE	$FF, $FF, $FF, $FF, $0F, $0F, $0F, $0F
-; 	BYTE	$F0, $F0, $F0, $F0, $FF, $FF, $FF, $FF
-; 	BYTE	$E7, $E7, $E7, $07, $07, $FF, $FF, $FF
-; 	BYTE	$0F, $0F, $0F, $0F, $FF, $FF, $FF, $FF
-; 	BYTE	$0F, $0F, $0F, $0F, $F0, $F0, $F0, $F0
-
-; ; screen character data
-; *=$2800
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $20, $08, $09, $07, $08, $20, $13, $03, $0F, $12, $05, $20, $55, $40, $40, $40, $40, $49, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $30, $30, $30, $30, $30, $30, $20, $20, $20, $20, $30, $30, $30, $30, $30, $30, $20, $20, $20, $42, $30, $30, $30, $30, $42, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $4A, $40, $40, $40, $40, $4B, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $E0, $E0, $E0, $E0, $E0, $20, $20, $A0, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $0C, $3D, $30, $32, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $A0, $81, $81, $81, $81, $81, $81, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $A0, $20, $20, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $A0, $20, $20, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $89, $89, $8A, $8A, $8B, $8B, $8C, $8C, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $20, $88, $88, $87, $87, $86, $A0, $85, $85, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $A0, $8F, $8F, $8E, $8E, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $8F, $8E, $8E, $A0, $8D, $8D, $8C, $8C, $8B, $8B, $8A, $8A, $89, $89, $81, $81, $82, $82, $83, $83, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $8A, $8A, $8A, $89, $81, $81, $82, $83, $83, $83, $84, $84, $85, $85, $86, $86, $87, $87, $88, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $87, $87, $A0, $88, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$8E, $8E, $8F, $8F, $A0, $20, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$83, $83, $82, $82, $81, $81, $89, $89, $8A, $A0, $8B, $8B, $8C, $8C, $8D, $8D, $8E, $8E, $8F, $8F, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $88, $88, $A0, $87, $86, $86, $85, $85, $A0, $84, $83, $83, $82, $82, $81, $81, $89, $89, $8A, $8A, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $88, $A0, $87, $87, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $A0, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $8F, $8F, $8E, $8E, $8D, $8D, $8C, $8C, $8B, $8B, $8A, $8A, $89, $89, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-; 	BYTE	$81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $81, $82, $82, $83, $83, $84, $84, $85, $85, $86, $86, $87, $87, $88, $88, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20, $20
-
-; ; screen color data
-; *=$2be8
-; 	BYTE	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $02, $02, $02, $02, $0E, $02, $02, $02, $02, $02, $0E, $01, $01, $01, $01, $01, $01, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $01, $01, $01, $01, $01, $01, $0E, $0E, $0E, $0E, $01, $01, $01, $01, $01, $01, $0E, $0E, $0E, $01, $0E, $0E, $0E, $0E, $01, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $03, $0E, $03, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $01, $01, $01, $01, $01, $01, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $06, $06, $06, $06, $06, $0E, $0E, $03, $0E, $03, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $06, $06, $06, $06, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $03, $0E, $03, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $03, $0E, $03, $04, $04, $04, $04, $04, $04, $0E, $0E, $04, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $03, $0E, $03, $0E, $0E, $0E, $0E, $0E, $03, $0E, $0E, $0E, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $03, $0E, $03, $0E, $0E, $0E, $0E, $0E, $03, $0E, $0E, $0E, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $04, $04, $04, $03, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $03, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $04, $04, $03, $04, $04, $04, $04, $03, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$04, $04, $04, $04, $03, $0E, $0E, $0E, $0E, $03, $0E, $0E, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$04, $04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $0E, $04, $04, $0E, $04, $0E, $03, $0E, $0E, $0E, $04, $04, $03, $04, $04, $04, $04, $04, $04, $04, $04, $03, $0E, $0E, $0E, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$04, $04, $04, $04, $04, $04, $04, $04, $03, $04, $04, $04, $04, $04, $03, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $03, $0E, $0E, $0E, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $0E, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $04, $0E, $0E, $0E, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
-; 	BYTE	$04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $04, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E, $0E
+SpriteList13:
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
+    Sprite
