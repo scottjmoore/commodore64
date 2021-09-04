@@ -13,11 +13,11 @@ clean:
 
 run:
 	make
-	x64sc -model ntsc -autostart "helloworld.d64:helloworld.prg"
+	x64sc -model ntsc -autostart "helloworld.d64:helloworld.prg" &
 
 run-pal:
 	make
-	x64sc -model pal -autostart "helloworld.d64:helloworld.prg"
+	x64sc -model pal -autostart "helloworld.d64:helloworld.prg" &
 
 clean-run:
 	make clean
