@@ -17,11 +17,44 @@ Start:
     jsr InitInterrupts
 
 Loop:
+    dec SpriteList1 + 1 + 0
+    inc SpriteList1 + 1 + 4
+    dec SpriteList1 + 1 + 8
+    inc SpriteList1 + 1 + 12
+    dec SpriteList1 + 1 + 16
+    inc SpriteList1 + 1 + 20
+    dec SpriteList1 + 1 + 24
+    inc SpriteList1 + 1 + 28
+    inc SpriteList2 + 1 + 0
+    inc SpriteList2 + 1 + 4
+    inc SpriteList2 + 1 + 8
+    dec SpriteList2 + 1 + 12
+    inc SpriteList2 + 1 + 16
+    dec SpriteList2 + 1 + 20
+    inc SpriteList2 + 1 + 24
+    dec SpriteList2 + 1 + 28
+    dec SpriteList3 + 1 + 0
+    inc SpriteList3 + 1 + 4
+    dec SpriteList3 + 1 + 8
+    inc SpriteList3 + 1 + 12
+    dec SpriteList3 + 1 + 16
+    inc SpriteList3 + 1 + 20
+    dec SpriteList3 + 1 + 24
+    inc SpriteList3 + 1 + 28
+
     lda $dc00
     and #1<<4
     bne NoFire
     jmp Exit
 NoFire:
+    lda #$00
+.WaitStart
+    cmp $d012
+    bne .WaitStart
+    lda #$ff
+.WaitEnd
+    cmp $d012
+    bne .WaitEnd
     jmp Loop
 
 Exit:
@@ -81,7 +114,7 @@ InitSprites:
     sta $d02e
     rts 
 
-RasterStart     equ 32
+RasterStart     equ 34
 RasterSize      equ 32
 InitInterrupts:
     sei 
@@ -383,14 +416,14 @@ SpriteList2:
     db $00
 
 SpriteList3:
-    Sprite Sprite0 >> 6,16,45 + 64
-    Sprite Sprite0 >> 6,48,45 + 64
-    Sprite Sprite0 >> 6,80,45 + 64
-    Sprite Sprite0 >> 6,112,45 + 64
-    Sprite Sprite0 >> 6,144,45 + 64
-    Sprite Sprite0 >> 6,176,45 + 64
-    Sprite Sprite0 >> 6,208,45 + 64
-    Sprite Sprite0 >> 6,240,45 + 64
+    Sprite Sprite2 >> 6,16,45 + 64
+    Sprite Sprite3 >> 6,48,45 + 64
+    Sprite Sprite4 >> 6,80,45 + 64
+    Sprite Sprite2 >> 6,112,45 + 64
+    Sprite Sprite3 >> 6,144,45 + 64
+    Sprite Sprite4 >> 6,176,45 + 64
+    Sprite Sprite2 >> 6,208,45 + 64
+    Sprite Sprite3 >> 6,240,45 + 64
     db $00
 
 SpriteList4:
@@ -506,3 +539,21 @@ Sprite1:
 	db $0F, $E8, $00, $3B, $AE, $00, $3A, $EB, $80, $3E, $AF, $00, $02, $AA, $00, $0F, $F0, $00, $3F, $5C, $00
 	db $3D, $64, $00, $3F, $55, $00, $1E, $95, $00, $16, $55, $00, $15, $14, $00, $3C, $3C, $00, $3F, $3F, $00
 	db 0
+
+Sprite2:
+    db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff 
+    db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff 
+    db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff 
+    db 0
+
+Sprite3:
+    db $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55 
+    db $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55 
+    db $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55 
+    db 0
+
+Sprite4:
+    db $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa 
+    db $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa 
+    db $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa 
+    db 0
