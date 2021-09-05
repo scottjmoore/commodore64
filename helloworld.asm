@@ -2,7 +2,7 @@
 
     dw $080b                ; Next line pointer
     dw $000a                ; Line 10
-    db $9e," 2064"          ; SYS 2064 ($0810)
+    db $9e," 3072"          ; SYS 2064 ($0810)
     db $00,$00,$00,$00,$00  ; zero padding
 
     struct  Sprite
@@ -11,6 +11,7 @@
         y:      db $00
     endstruct
 
+    org $0c00
 Start:
     jsr InitScreen
     jsr InitSprites
@@ -92,30 +93,45 @@ NoRight:
     jmp Exit
 NoFire:
 
+    ldx #$00
     lda ScrollingDecY
     beq NoScrollingDecY
     jsr ScrollDecY
+    ldx #$01
     jmp NoScrollingIncY
 
 NoScrollingDecY:
     lda ScrollingIncY
     beq NoScrollingIncY
     jsr ScrollIncY
+    ldx #$01
 
 NoScrollingIncY:
     lda ScrollingDecX
     beq NoScrollingDecX
     jsr ScrollDecX
+    ldx #$01
     jmp NoScrollingIncX
 
 NoScrollingDecX:
     lda ScrollingIncX
     beq NoScrollingIncX
     jsr ScrollIncX
+    ldx #$01
 
 NoScrollingIncX:
-    jmp Loop
 
+    cpx #$01
+    bne NoScrolling
+    lda ScrollX
+    ora ScrollY
+    bne NoScrolling
+    lda $d018
+    and #%00111111
+    eor #%00110000
+    sta $d018
+NoScrolling:
+    jmp Loop
 
 Exit:
     jmp ($fffc)             ; Jump to code stored in 6502 reset vector
@@ -137,27 +153,39 @@ ScrollingDecY:
 InitScreen:
     jsr $e544               ; Clear the screen
 
+    lda $d018
+    and #%00001111
+    ora #32
+    sta $d018
+    
     lda #$00                ; Load accumulator with colour value for black
     sta $d020               ; Set border colour to black
     sta $d021               ; Set background colour 0 to black
 
-    lda #1                  ; Load accumulator with zero
+    lda #7                  ; Load accumulator with zero
     ldy #0                  ; Set Y register to count 256 times
     ldx #3
 InitScreenLoop1:
     sta $0400,y             ; Store the accumulator in screen memory + Y register
+    eor #$20
+    sta $0800,y             ; Store the accumulator in screen memory + Y register
+    eor #$20
     sta $d800,y             ; Store the accumulator in colour memory + Y register
     ; clc 
     ; adc #1
     iny                     ; increment the Y register
     bne InitScreenLoop1           ; If != 0 go back to StartLoop
     inc InitScreenLoop1 + 2
-    inc InitScreenLoop1 + 5
+    inc InitScreenLoop1 + 7
+    inc InitScreenLoop1 + 12
     dex 
     bne InitScreenLoop1
     
 InitScreenLoop2:
     sta $0700,y             ; Store the accumulator in screen memory + Y register
+    eor #$20
+    sta $0b00,y             ; Store the accumulator in screen memory + Y register
+    eor #$20
     sta $db00,y             ; Store the accumulator in colour memory + Y register
     ; clc 
     ; adc #1
