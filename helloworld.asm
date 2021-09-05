@@ -49,7 +49,7 @@ Loop:
     cmp $d012
     bne .WaitStart
 
-    lda #$fa
+    lda #220
 
 .WaitEnd
     cmp $d012
@@ -97,40 +97,42 @@ NoFire:
     lda ScrollingDecY
     beq NoScrollingDecY
     jsr ScrollDecY
-    ldx #$01
+    tax 
     jmp NoScrollingIncY
 
 NoScrollingDecY:
     lda ScrollingIncY
     beq NoScrollingIncY
     jsr ScrollIncY
-    ldx #$01
+    tax 
 
 NoScrollingIncY:
     lda ScrollingDecX
     beq NoScrollingDecX
     jsr ScrollDecX
-    ldx #$01
+    tax 
     jmp NoScrollingIncX
 
 NoScrollingDecX:
     lda ScrollingIncX
     beq NoScrollingIncX
     jsr ScrollIncX
-    ldx #$01
+    tax 
 
 NoScrollingIncX:
 
-    cpx #$01
-    bne NoScrolling
-    lda ScrollX
-    ora ScrollY
+    cpx #$00
+    beq NoScrolling
+    ; lda ScrollY
+    lda #$00
+    ora ScrollX
     bne NoScrolling
     lda $d018
     and #%00111111
     eor #%00110000
     sta $d018
 NoScrolling:
+    jsr ScrollBufferIncX
     jmp Loop
 
 Exit:
@@ -167,28 +169,28 @@ InitScreen:
     ldx #3
 InitScreenLoop1:
     sta $0400,y             ; Store the accumulator in screen memory + Y register
-    eor #$20
-    sta $0800,y             ; Store the accumulator in screen memory + Y register
-    eor #$20
-    sta $d800,y             ; Store the accumulator in colour memory + Y register
-    ; clc 
-    ; adc #1
+    eor #$00
+    sta $0801,y             ; Store the accumulator in screen memory + Y register
+    eor #$00
+    ; sta $d800,y             ; Store the accumulator in colour memory + Y register
+    clc 
+    adc #1
     iny                     ; increment the Y register
     bne InitScreenLoop1           ; If != 0 go back to StartLoop
     inc InitScreenLoop1 + 2
     inc InitScreenLoop1 + 7
-    inc InitScreenLoop1 + 12
+    ; inc InitScreenLoop1 + 12
     dex 
     bne InitScreenLoop1
     
 InitScreenLoop2:
     sta $0700,y             ; Store the accumulator in screen memory + Y register
-    eor #$20
-    sta $0b00,y             ; Store the accumulator in screen memory + Y register
-    eor #$20
-    sta $db00,y             ; Store the accumulator in colour memory + Y register
-    ; clc 
-    ; adc #1
+    eor #$00
+    sta $0b01,y             ; Store the accumulator in screen memory + Y register
+    eor #$00
+    ; sta $db00,y             ; Store the accumulator in colour memory + Y register
+    clc 
+    adc #1
     iny                     ; increment the Y register
     cpy #232
     bne InitScreenLoop2      ; If != 232 go back to StartLoop
@@ -270,6 +272,49 @@ ScrollDecY:
     and #%11111000
     ora ScrollY
     sta $d011
+    rts
+
+ScrollBufferIncX:
+    lda #$0f
+    sta $d020
+
+    lda ScrollX
+    beq .Exit
+    cmp #$04
+    bcc .Scroll
+    jmp .Exit
+.Scroll
+    adc #$03
+    sta .Screen2Hi + 1
+    adc #$04
+    sta .Screen1Hi + 1
+
+    lda $d018
+    and #%00010000
+    beq .ScrollScreen2
+.Screen1Hi
+    lda #$04
+    sta .ScrollLoad + 2
+    sta .ScrollStore + 2
+    jmp .ScrollScreen1
+.ScrollScreen2
+.Screen2Hi
+    lda #$08
+    sta .ScrollLoad + 2
+    sta .ScrollStore + 2
+.ScrollScreen1
+    ldy #254
+.ScrollLoop
+.ScrollLoad
+    lda $0800,y
+.ScrollStore
+    sta $0802,y
+    dey 
+    bne .ScrollLoop
+
+.Exit    
+    lda #$00
+    sta $d020
     rts 
 
 RasterStart     equ 34
