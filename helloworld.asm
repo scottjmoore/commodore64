@@ -42,23 +42,97 @@ Loop:
     dec SpriteList3 + 1 + 24
     inc SpriteList3 + 1 + 28
 
+    lda #$00
+
+.WaitStart
+    cmp $d012
+    bne .WaitStart
+
+    lda #$fa
+
+.WaitEnd
+    cmp $d012
+    bne .WaitEnd
+
+    lda ScrollY
+    bne NoDown
+    lda ScrollX
+    bne NoRight
+    lda $dc00
+    and #1<<0
+    bne NoUp
+    ; jsr ScrollDecY
+    lda #-1
+    sta ScrollingDecY
+NoUp:
+    lda $dc00
+    and #1<<1
+    bne NoDown
+    ; jsr ScrollIncY
+    lda #-1
+    sta ScrollingIncY
+NoDown:
+    lda $dc00
+    and #1<<2
+    bne NoLeft
+    ; jsr ScrollDecX
+    lda #-1
+    sta ScrollingDecX
+NoLeft:
+    lda $dc00
+    and #1<<3
+    bne NoRight
+    ; jsr ScrollIncX
+    lda #-1
+    sta ScrollingIncX
+NoRight:
     lda $dc00
     and #1<<4
     bne NoFire
     jmp Exit
 NoFire:
-    lda #$00
-.WaitStart
-    cmp $d012
-    bne .WaitStart
-    lda #$ff
-.WaitEnd
-    cmp $d012
-    bne .WaitEnd
+
+    lda ScrollingDecY
+    beq NoScrollingDecY
+    jsr ScrollDecY
+    jmp NoScrollingIncY
+
+NoScrollingDecY:
+    lda ScrollingIncY
+    beq NoScrollingIncY
+    jsr ScrollIncY
+
+NoScrollingIncY:
+    lda ScrollingDecX
+    beq NoScrollingDecX
+    jsr ScrollDecX
+    jmp NoScrollingIncX
+
+NoScrollingDecX:
+    lda ScrollingIncX
+    beq NoScrollingIncX
+    jsr ScrollIncX
+
+NoScrollingIncX:
     jmp Loop
+
 
 Exit:
     jmp ($fffc)             ; Jump to code stored in 6502 reset vector
+
+ScrollX:
+    db $00
+ScrollY:
+    db $00
+
+ScrollingIncX:
+    db $00
+ScrollingDecX:
+    db $00
+ScrollingIncY:
+    db $00
+ScrollingDecY:
+    db $00
 
 InitScreen:
     jsr $e544               ; Clear the screen
@@ -67,14 +141,14 @@ InitScreen:
     sta $d020               ; Set border colour to black
     sta $d021               ; Set background colour 0 to black
 
-    lda #0                  ; Load accumulator with zero
+    lda #1                  ; Load accumulator with zero
     ldy #0                  ; Set Y register to count 256 times
     ldx #3
 InitScreenLoop1:
     sta $0400,y             ; Store the accumulator in screen memory + Y register
     sta $d800,y             ; Store the accumulator in colour memory + Y register
-    clc 
-    adc #1
+    ; clc 
+    ; adc #1
     iny                     ; increment the Y register
     bne InitScreenLoop1           ; If != 0 go back to StartLoop
     inc InitScreenLoop1 + 2
@@ -85,11 +159,19 @@ InitScreenLoop1:
 InitScreenLoop2:
     sta $0700,y             ; Store the accumulator in screen memory + Y register
     sta $db00,y             ; Store the accumulator in colour memory + Y register
-    clc 
-    adc #1
+    ; clc 
+    ; adc #1
     iny                     ; increment the Y register
     cpy #232
     bne InitScreenLoop2      ; If != 232 go back to StartLoop
+
+    lda $d011
+    and #%11110111
+    sta $d011
+    lda $d016
+    and #%11110111
+    sta $d016
+
     rts 
 
 InitSprites:
@@ -112,6 +194,54 @@ InitSprites:
     sta $d02c
     sta $d02d
     sta $d02e
+    rts 
+
+ScrollIncX:
+    inc ScrollX
+    lda #%00000111
+    and ScrollX
+    sta ScrollX
+    sta ScrollingIncX
+    lda $d016
+    and #%11111000
+    ora ScrollX
+    sta $d016
+    rts 
+
+ScrollIncY:
+    inc ScrollY
+    lda #%00000111
+    and ScrollY
+    sta ScrollY
+    sta ScrollingIncY
+    lda $d011
+    and #%11111000
+    ora ScrollY
+    sta $d011
+    rts 
+
+ScrollDecX:
+    dec ScrollX
+    lda #%00000111
+    and ScrollX
+    sta ScrollX
+    sta ScrollingDecX
+    lda $d016
+    and #%11111000
+    ora ScrollX
+    sta $d016
+    rts 
+
+ScrollDecY:
+    dec ScrollY
+    lda #%00000111
+    and ScrollY
+    sta ScrollY
+    sta ScrollingDecY
+    lda $d011
+    and #%11111000
+    ora ScrollY
+    sta $d011
     rts 
 
 RasterStart     equ 34
