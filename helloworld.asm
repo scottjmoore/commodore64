@@ -5,85 +5,47 @@
     db $9e," 3072"          ; SYS 2064 ($0810)
     db $00,$00,$00,$00,$00  ; zero padding
 
-    struct  Sprite
-        ptr:    db $00
-        x:      dw $0000
-        y:      db $00
-    endstruct
-
     org $0c00
 Start:
     jsr InitScreen
-    jsr InitSprites
-    jsr InitInterrupts
 
 Loop:
-    dec SpriteList1 + 1 + 0
-    inc SpriteList1 + 1 + 4
-    dec SpriteList1 + 1 + 8
-    inc SpriteList1 + 1 + 12
-    dec SpriteList1 + 1 + 16
-    inc SpriteList1 + 1 + 20
-    dec SpriteList1 + 1 + 24
-    inc SpriteList1 + 1 + 28
-    inc SpriteList2 + 1 + 0
-    inc SpriteList2 + 1 + 4
-    inc SpriteList2 + 1 + 8
-    dec SpriteList2 + 1 + 12
-    inc SpriteList2 + 1 + 16
-    dec SpriteList2 + 1 + 20
-    inc SpriteList2 + 1 + 24
-    dec SpriteList2 + 1 + 28
-    dec SpriteList3 + 1 + 0
-    inc SpriteList3 + 1 + 4
-    dec SpriteList3 + 1 + 8
-    inc SpriteList3 + 1 + 12
-    dec SpriteList3 + 1 + 16
-    inc SpriteList3 + 1 + 20
-    dec SpriteList3 + 1 + 24
-    inc SpriteList3 + 1 + 28
-
     lda #$00
-
 .WaitStart
     cmp $d012
     bne .WaitStart
 
-    lda #220
-
+    lda #$f6
 .WaitEnd
     cmp $d012
     bne .WaitEnd
 
     lda ScrollY
-    bne NoDown
+    bne NoRight
     lda ScrollX
     bne NoRight
+
     lda $dc00
     and #1<<0
     bne NoUp
-    ; jsr ScrollDecY
     lda #-1
     sta ScrollingDecY
 NoUp:
     lda $dc00
     and #1<<1
     bne NoDown
-    ; jsr ScrollIncY
     lda #-1
     sta ScrollingIncY
 NoDown:
     lda $dc00
     and #1<<2
     bne NoLeft
-    ; jsr ScrollDecX
     lda #-1
     sta ScrollingDecX
 NoLeft:
     lda $dc00
     and #1<<3
     bne NoRight
-    ; jsr ScrollIncX
     lda #-1
     sta ScrollingIncX
 NoRight:
@@ -92,47 +54,18 @@ NoRight:
     bne NoFire
     jmp Exit
 NoFire:
-
-    ldx #$00
-    lda ScrollingDecY
-    beq NoScrollingDecY
-    jsr ScrollDecY
-    tax 
-    jmp NoScrollingIncY
-
-NoScrollingDecY:
-    lda ScrollingIncY
-    beq NoScrollingIncY
-    jsr ScrollIncY
-    tax 
-
-NoScrollingIncY:
-    lda ScrollingDecX
-    beq NoScrollingDecX
-    jsr ScrollDecX
-    tax 
-    jmp NoScrollingIncX
-
-NoScrollingDecX:
+    lda #$0f
+    sta $d020
     lda ScrollingIncX
     beq NoScrollingIncX
     jsr ScrollIncX
-    tax 
-
-NoScrollingIncX:
-
-    cpx #$00
-    beq NoScrolling
-    ; lda ScrollY
-    lda #$00
-    ora ScrollX
-    bne NoScrolling
-    lda $d018
-    and #%00111111
-    eor #%00110000
-    sta $d018
-NoScrolling:
+    cmp #$01
+    bne NoScrollingIncX
     jsr ScrollBufferIncX
+NoScrollingIncX:
+    lda #$00
+    sta $d020
+
     jmp Loop
 
 Exit:
@@ -204,38 +137,175 @@ InitScreenLoop2:
 
     rts 
 
-InitSprites:
-    lda #$ff
-    sta $d015
-    lda #$00
-    sta $d01b
-    lda #$ff
-    sta $d01c
-    lda #$02
-    sta $d025
-    lda #$06
-    sta $d026
-    lda #$0a
-    sta $d027
-    sta $d028
-    sta $d029
-    sta $d02a
-    sta $d02b
-    sta $d02c
-    sta $d02d
-    sta $d02e
-    rts 
-
 ScrollIncX:
-    inc ScrollX
-    lda #%00000111
-    and ScrollX
-    sta ScrollX
-    sta ScrollingIncX
     lda $d016
     and #%11111000
     ora ScrollX
     sta $d016
+    inc ScrollX
+    lda ScrollX
+    and #%00000111
+    sta ScrollX
+    sta ScrollingIncX
+    rts 
+
+ScrollBufferIncX:
+    lda $0800+(0 * 40)+39
+    pha 
+    lda $0800+(1 * 40)+39
+    pha 
+    lda $0800+(2 * 40)+39
+    pha 
+    lda $0800+(3 * 40)+39
+    pha 
+    lda $0800+(4 * 40)+39
+    pha 
+    lda $0800+(5 * 40)+39
+    pha 
+    lda $0800+(6 * 40)+39
+    pha 
+    lda $0800+(7 * 40)+39
+    pha 
+    lda $0800+(8 * 40)+39
+    pha 
+    lda $0800+(9 * 40)+39
+    pha 
+    lda $0800+(10 * 40)+39
+    pha 
+    lda $0800+(11 * 40)+39
+    pha 
+    lda $0800+(12 * 40)+39
+    pha 
+    lda $0800+(13 * 40)+39
+    pha 
+    lda $0800+(14 * 40)+39
+    pha 
+    lda $0800+(15 * 40)+39
+    pha 
+    lda $0800+(16 * 40)+39
+    pha 
+    lda $0800+(17 * 40)+39
+    pha 
+    lda $0800+(18 * 40)+39
+    pha 
+    lda $0800+(19 * 40)+39
+    pha 
+    lda $0800+(20 * 40)+39
+    pha 
+    lda $0800+(21 * 40)+39
+    pha 
+    lda $0800+(22 * 40)+39
+    pha 
+    lda $0800+(23 * 40)+39
+    pha 
+    lda $0800+(24 * 40)+39
+    pha 
+    ldx #39
+.CopyLines
+    lda $0800+(0 * 40)-1,x
+    sta $0800+(0 * 40),x
+    lda $0800+(1 * 40)-1,x
+    sta $0800+(1 * 40),x
+    lda $0800+(2 * 40)-1,x
+    sta $0800+(2 * 40),x
+    lda $0800+(3 * 40)-1,x
+    sta $0800+(3 * 40),x
+    lda $0800+(4 * 40)-1,x
+    sta $0800+(4 * 40),x
+    lda $0800+(5 * 40)-1,x
+    sta $0800+(5 * 40),x
+    lda $0800+(6 * 40)-1,x
+    sta $0800+(6 * 40),x
+    lda $0800+(7 * 40)-1,x
+    sta $0800+(7 * 40),x
+    lda $0800+(8 * 40)-1,x
+    sta $0800+(8 * 40),x
+    lda $0800+(9 * 40)-1,x
+    sta $0800+(9 * 40),x
+    lda $0800+(10 * 40)-1,x
+    sta $0800+(10 * 40),x
+    lda $0800+(11 * 40)-1,x
+    sta $0800+(11 * 40),x
+    lda $0800+(12 * 40)-1,x
+    sta $0800+(12 * 40),x
+    lda $0800+(13 * 40)-1,x
+    sta $0800+(13 * 40),x
+    lda $0800+(14 * 40)-1,x
+    sta $0800+(14 * 40),x
+    lda $0800+(15 * 40)-1,x
+    sta $0800+(15 * 40),x
+    lda $0800+(16 * 40)-1,x
+    sta $0800+(16 * 40),x
+    lda $0800+(17 * 40)-1,x
+    sta $0800+(17 * 40),x
+    lda $0800+(18 * 40)-1,x
+    sta $0800+(18 * 40),x
+    lda $0800+(19 * 40)-1,x
+    sta $0800+(19 * 40),x
+    lda $0800+(20 * 40)-1,x
+    sta $0800+(20 * 40),x
+    lda $0800+(21 * 40)-1,x
+    sta $0800+(21 * 40),x
+    lda $0800+(22 * 40)-1,x
+    sta $0800+(22 * 40),x
+    lda $0800+(23 * 40)-1,x
+    sta $0800+(23 * 40),x
+    lda $0800+(24 * 40)-1,x
+    sta $0800+(24 * 40),x
+    dex 
+    beq .StopCopyLines
+    jmp .CopyLines
+.StopCopyLines
+    pla 
+    sta $0800+(24*40)
+    pla 
+    sta $0800+(23*40)
+    pla 
+    sta $0800+(22*40)
+    pla 
+    sta $0800+(21*40)
+    pla 
+    sta $0800+(20*40)
+    pla 
+    sta $0800+(19*40)
+    pla 
+    sta $0800+(18*40)
+    pla 
+    sta $0800+(17*40)
+    pla 
+    sta $0800+(16*40)
+    pla 
+    sta $0800+(15*40)
+    pla 
+    sta $0800+(14*40)
+    pla 
+    sta $0800+(13*40)
+    pla 
+    sta $0800+(12*40)
+    pla 
+    sta $0800+(11*40)
+    pla 
+    sta $0800+(10*40)
+    pla 
+    sta $0800+(9*40)
+    pla 
+    sta $0800+(8*40)
+    pla 
+    sta $0800+(7*40)
+    pla 
+    sta $0800+(6*40)
+    pla 
+    sta $0800+(5*40)
+    pla 
+    sta $0800+(4*40)
+    pla 
+    sta $0800+(3*40)
+    pla 
+    sta $0800+(2*40)
+    pla 
+    sta $0800+(1*40)
+    pla 
+    sta $0800+(0*40)
     rts 
 
 ScrollIncY:
@@ -274,489 +344,45 @@ ScrollDecY:
     sta $d011
     rts
 
-ScrollBufferIncX:
-    lda #$0f
-    sta $d020
+; ScrollBufferIncX:
+;     lda #$0f
+;     sta $d020
 
-    lda ScrollX
-    beq .Exit
-    cmp #$04
-    bcc .Scroll
-    jmp .Exit
-.Scroll
-    adc #$03
-    sta .Screen2Hi + 1
-    adc #$04
-    sta .Screen1Hi + 1
+;     lda ScrollX
+;     beq .Exit
+;     cmp #$04
+;     bcc .Scroll
+;     jmp .Exit
+; .Scroll
+;     adc #$03
+;     sta .Screen2Hi + 1
+;     adc #$04
+;     sta .Screen1Hi + 1
 
-    lda $d018
-    and #%00010000
-    beq .ScrollScreen2
-.Screen1Hi
-    lda #$04
-    sta .ScrollLoad + 2
-    sta .ScrollStore + 2
-    jmp .ScrollScreen1
-.ScrollScreen2
-.Screen2Hi
-    lda #$08
-    sta .ScrollLoad + 2
-    sta .ScrollStore + 2
-.ScrollScreen1
-    ldy #254
-.ScrollLoop
-.ScrollLoad
-    lda $0800,y
-.ScrollStore
-    sta $0802,y
-    dey 
-    bne .ScrollLoop
-
-.Exit    
-    lda #$00
-    sta $d020
-    rts 
-
-RasterStart     equ 34
-RasterSize      equ 32
-InitInterrupts:
-    sei 
-    lda #%01111111
-    sta $dc0d
-    and $d011
-    sta $d011
-    lda $dc0d
-    lda $dd0d
-    lda #RasterStart + (RasterSize * 0)
-    sta $d012
-    lda #<IrqService1
-    sta $0314
-    lda #>IrqService1
-    sta $0315
-    lda #%00000001
-    sta $d01a
-    cli 
-    rts 
-
-IrqService1:
-    lda #$0f
-    sta $d020
-    lda #<SpriteList1
-    sta $fb
-    lda #>SpriteList1
-    sta $fc
-    lda #$00
-    sta .SpriteX + 1
-    sta .SpriteY + 1
-    inc .SpriteY + 1
-    ldy #0
-    ldx #0
-.IterateSpriteList
-    lda ($fb),y
-    beq .EndOfSpriteList
-    iny 
-    sta $07f8,x
-    inx 
-    lda ($fb),y
-    iny 
-    iny 
-.SpriteX
-    sta $d000
-    inc .SpriteX + 1
-    inc .SpriteX + 1
-    lda ($fb),y
-    iny 
-.SpriteY
-    sta $d001
-    inc .SpriteY + 1
-    inc .SpriteY + 1
-    jmp .IterateSpriteList
-
-.EndOfSpriteList
-    lda #$01
-    sta $d020
-    lda #RasterStart + (RasterSize * 1)
-    sta $d012
-    lda #<IrqService2
-    sta $0314
-    lda #>IrqService2
-    sta $0315
-    asl $d019
-    jmp $ea81
-
-IrqService2:
-    lda #$0f
-    sta $d020
-    lda #<SpriteList2
-    sta $fb
-    lda #>SpriteList2
-    sta $fc
-    lda #$00
-    sta .SpriteX + 1
-    sta .SpriteY + 1
-    inc .SpriteY + 1
-    ldy #0
-    ldx #0
-.IterateSpriteList
-    lda ($fb),y
-    beq .EndOfSpriteList
-    iny 
-    sta $07f8,x
-    inx 
-    lda ($fb),y
-    iny 
-    iny 
-.SpriteX
-    sta $d008
-    inc .SpriteX + 1
-    inc .SpriteX + 1
-    lda ($fb),y
-    iny 
-.SpriteY
-    sta $d009
-    inc .SpriteY + 1
-    inc .SpriteY + 1
-    jmp .IterateSpriteList
-
-.EndOfSpriteList
-    lda #$02
-    sta $d020
-    lda #RasterStart + (RasterSize * 2)
-    sta $d012
-    lda #<IrqService3
-    sta $0314
-    lda #>IrqService3
-    sta $0315
-    asl $d019
-    jmp $ea81
-    
-IrqService3:
-    lda #$0f
-    sta $d020
-    lda #<SpriteList3
-    sta $fb
-    lda #>SpriteList3
-    sta $fc
-    lda #$00
-    sta .SpriteX + 1
-    sta .SpriteY + 1
-    inc .SpriteY + 1
-    ldy #0
-    ldx #0
-.IterateSpriteList
-    lda ($fb),y
-    beq .EndOfSpriteList
-    iny 
-    sta $07f8,x
-    inx 
-    lda ($fb),y
-    iny 
-    iny 
-.SpriteX
-    sta $d008
-    inc .SpriteX + 1
-    inc .SpriteX + 1
-    lda ($fb),y
-    iny 
-.SpriteY
-    sta $d009
-    inc .SpriteY + 1
-    inc .SpriteY + 1
-    jmp .IterateSpriteList
-
-.EndOfSpriteList
-    lda #$03
-    sta $d020
-    lda #RasterStart + (RasterSize * 3)
-    sta $d012
-    lda #<IrqServiceLast
-    sta $0314
-    lda #>IrqServiceLast
-    sta $0315
-    asl $d019
-    jmp $ea81
-    
-; IrqService4:
+;     lda $d018
+;     and #%00010000
+;     beq .ScrollScreen2
+; .Screen1Hi
 ;     lda #$04
-;     sta $d020
-;     lda #RasterStart + (RasterSize * 4)
-;     sta $d012
-;     lda #<IrqService5
-;     sta $0314
-;     lda #>IrqService5
-;     sta $0315
-;     asl $d019
-;     jmp $ea81
-    
-; IrqService5:
-;     lda #$05
-;     sta $d020
-;     lda #RasterStart + (RasterSize * 5)
-;     sta $d012
-;     lda #<IrqService6
-;     sta $0314
-;     lda #>IrqService6
-;     sta $0315
-;     asl $d019
-;     jmp $ea81
-    
-; IrqService6:
-;     lda #$06
-;     sta $d020
-;     lda #RasterStart + (RasterSize * 6)
-;     sta $d012
-;     lda #<IrqService7
-;     sta $0314
-;     lda #>IrqService7
-;     sta $0315
-;     asl $d019
-;     jmp $ea81
-    
-; IrqService7:
-;     lda #$07
-;     sta $d020
-;     lda #RasterStart + (RasterSize * 7)
-;     sta $d012
-;     lda #<IrqService8
-;     sta $0314
-;     lda #>IrqService8
-;     sta $0315
-;     asl $d019
-;     jmp $ea81
-    
-; IrqService8:
+;     sta .ScrollLoad + 2
+;     sta .ScrollStore + 2
+;     jmp .ScrollScreen1
+; .ScrollScreen2
+; .Screen2Hi
 ;     lda #$08
+;     sta .ScrollLoad + 2
+;     sta .ScrollStore + 2
+; .ScrollScreen1
+;     ldy #254
+; .ScrollLoop
+; .ScrollLoad
+;     lda $0800,y
+; .ScrollStore
+;     sta $0802,y
+;     dey 
+;     bne .ScrollLoop
+
+; .Exit    
+;     lda #$00
 ;     sta $d020
-;     lda #RasterStart + (RasterSize * 8)
-;     sta $d012
-;     lda #<IrqService9
-;     sta $0314
-;     lda #>IrqService9
-;     sta $0315
-;     asl $d019
-;     jmp $ea81
-    
-; IrqService9:
-;     lda #$09
-;     sta $d020
-;     lda #RasterStart + (RasterSize * 9)
-;     sta $d012
-;     lda #<IrqService10
-;     sta $0314
-;     lda #>IrqService10
-;     sta $0315
-;     asl $d019
-;     jmp $ea81
-    
-; IrqService10:
-;     lda #$0a
-;     sta $d020
-;     lda #RasterStart + (RasterSize * 10)
-;     sta $d012
-;     lda #<IrqService11
-;     sta $0314
-;     lda #>IrqService11
-;     sta $0315
-;     asl $d019
-;     jmp $ea81
-    
-; IrqService11:
-;     lda #$0b
-;     sta $d020
-;     lda #RasterStart + (RasterSize * 11)
-;     sta $d012
-;     lda #<IrqService12
-;     sta $0314
-;     lda #>IrqService12
-;     sta $0315
-;     asl $d019
-;     jmp $ea81
-    
-; IrqService12:
-;     lda #$0c
-;     sta $d020
-;     lda #RasterStart + (RasterSize * 12)
-;     sta $d012
-;     lda #<IrqServiceLast
-;     sta $0314
-;     lda #>IrqServiceLast
-;     sta $0315
-;     asl $d019
-;     jmp $ea81
-    
-IrqServiceLast:
-    lda #$00
-    sta $d020
-    lda #RasterStart + (RasterSize * 0)
-    sta $d012
-    lda #<IrqService1
-    sta $0314
-    lda #>IrqService1
-    sta $0315
-    asl $d019
-    jmp $ea31
-
-SpriteList1:
-    Sprite Sprite0 >> 6,16,45
-    Sprite Sprite0 >> 6,48,45
-    Sprite Sprite0 >> 6,80,45
-    Sprite Sprite0 >> 6,112,45
-    Sprite Sprite0 >> 6,144,45
-    Sprite Sprite0 >> 6,176,45
-    Sprite Sprite0 >> 6,208,45
-    Sprite Sprite0 >> 6,240,45
-    db $00
-
-SpriteList2:
-    Sprite Sprite1 >> 6,16,45 + 32
-    Sprite Sprite1 >> 6,48,45 + 32
-    Sprite Sprite1 >> 6,80,45 + 32
-    Sprite Sprite1 >> 6,112,45 + 32
-    Sprite Sprite1 >> 6,144,45 + 32
-    Sprite Sprite1 >> 6,176,45 + 32
-    Sprite Sprite1 >> 6,208,45 + 32
-    Sprite Sprite1 >> 6,240,45 + 32
-    db $00
-
-SpriteList3:
-    Sprite Sprite2 >> 6,16,45 + 64
-    Sprite Sprite3 >> 6,48,45 + 64
-    Sprite Sprite4 >> 6,80,45 + 64
-    Sprite Sprite2 >> 6,112,45 + 64
-    Sprite Sprite3 >> 6,144,45 + 64
-    Sprite Sprite4 >> 6,176,45 + 64
-    Sprite Sprite2 >> 6,208,45 + 64
-    Sprite Sprite3 >> 6,240,45 + 64
-    db $00
-
-SpriteList4:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-SpriteList5:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-SpriteList6:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-SpriteList7:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-SpriteList8:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-SpriteList9:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-SpriteList10:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-SpriteList11:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-SpriteList12:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-SpriteList13:
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-    Sprite
-
-    align 6
-
-Sprite0:
-    db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $55, $00
-	db $03, $57, $00, $0F, $FF, $C0, $0F, $FF, $C0, $02, $AA, $00, $0D, $FD, $C0, $3D, $FD, $F0, $35, $FD, $70
-	db $B5, $75, $78, $A5, $55, $68, $05, $55, $40, $05, $55, $40, $05, $45, $40, $01, $55, $00, $0F, $FF, $C0
-	db 0
-
-Sprite1:
-	db $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00, $01, $50, $00, $05, $55, $00
-	db $0F, $E8, $00, $3B, $AE, $00, $3A, $EB, $80, $3E, $AF, $00, $02, $AA, $00, $0F, $F0, $00, $3F, $5C, $00
-	db $3D, $64, $00, $3F, $55, $00, $1E, $95, $00, $16, $55, $00, $15, $14, $00, $3C, $3C, $00, $3F, $3F, $00
-	db 0
-
-Sprite2:
-    db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff 
-    db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff 
-    db $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff, $ff 
-    db 0
-
-Sprite3:
-    db $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55 
-    db $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55 
-    db $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55, $55 
-    db 0
-
-Sprite4:
-    db $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa 
-    db $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa 
-    db $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa, $aa 
-    db 0
+;     rts 
