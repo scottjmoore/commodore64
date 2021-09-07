@@ -66,7 +66,7 @@ NoScrollingIncX:
     beq NoScrollingDecX
     dec ScrollingDecX
     jsr ScrollDecX
-    cmp #$07
+    cmp #$06
     bne NoScrollingDecX
     jsr ScrollBufferDecX
 NoScrollingDecX:
@@ -82,11 +82,10 @@ NoScrollingIncY:
     beq NoScrollingDecY
     dec ScrollingDecY
     jsr ScrollDecY
-    cmp #$07
+    cmp #$06
     bne NoScrollingDecY
     jsr ScrollBufferDecY
 NoScrollingDecY:
-
     jmp Loop
 
 Exit:
@@ -167,6 +166,7 @@ ScrollIncX:
     lda ScrollX
     and #%00000111
     sta ScrollX
+    sta $d020
     rts 
 
 ScrollDecX:
@@ -178,6 +178,7 @@ ScrollDecX:
     lda ScrollX
     and #%00000111
     sta ScrollX
+    sta $d020
     rts 
 
 ScrollIncY:
@@ -189,6 +190,7 @@ ScrollIncY:
     lda ScrollY
     and #%00000111
     sta ScrollY
+    sta $d020
     rts 
 
 ScrollDecY:
@@ -200,6 +202,7 @@ ScrollDecY:
     lda ScrollY
     and #%00000111
     sta ScrollY
+    sta $d020
     rts 
 
 ScrollBufferIncX:
