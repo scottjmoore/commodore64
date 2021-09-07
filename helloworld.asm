@@ -166,7 +166,6 @@ ScrollIncX:
     lda ScrollX
     and #%00000111
     sta ScrollX
-    sta $d020
     rts 
 
 ScrollDecX:
@@ -178,7 +177,6 @@ ScrollDecX:
     lda ScrollX
     and #%00000111
     sta ScrollX
-    sta $d020
     rts 
 
 ScrollIncY:
@@ -190,7 +188,6 @@ ScrollIncY:
     lda ScrollY
     and #%00000111
     sta ScrollY
-    sta $d020
     rts 
 
 ScrollDecY:
@@ -202,7 +199,6 @@ ScrollDecY:
     lda ScrollY
     and #%00000111
     sta ScrollY
-    sta $d020
     rts 
 
 ScrollBufferIncX:
