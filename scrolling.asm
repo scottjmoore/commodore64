@@ -25,10 +25,12 @@ Loop:
     cmp $d012
     bne .WaitEnd
 
-    ; lda ScrollY
-    ; bne NoRight
-    ; lda ScrollX
-    ; bne NoRight
+    lda ScrollY
+    cmp #$01
+    bne NoRight
+    lda ScrollX
+    cmp #$01
+    bne NoRight
 
     lda $dc00
     and #1<<0
@@ -59,12 +61,58 @@ NoRight:
     bne NoFire
     jmp Exit
 NoFire:
+    lda ScrollingIncY
+    beq .NoScrollingIncY
+    lda ScrollY
+    and #1
+    bne .SkipParallaxIncY
+    lda CharacterSet+(238*8)+0
+    pha 
+    lda CharacterSet+(238*8)+1
+    sta CharacterSet+(238*8)+0
+    lda CharacterSet+(238*8)+2
+    sta CharacterSet+(238*8)+1
+    lda CharacterSet+(238*8)+3
+    sta CharacterSet+(238*8)+2
+    lda CharacterSet+(238*8)+4
+    sta CharacterSet+(238*8)+3
+    lda CharacterSet+(238*8)+5
+    sta CharacterSet+(238*8)+4
+    lda CharacterSet+(238*8)+6
+    sta CharacterSet+(238*8)+5
+    lda CharacterSet+(238*8)+7
+    sta CharacterSet+(238*8)+6
+    pla 
+    sta CharacterSet+(238*8)+7
+.SkipParallaxIncY
+    dec ScrollingIncY
+    jsr ScrollIncY
+
+    cmp #$03
+    bne .ScrollCharBuffer1to2IncY
+    lda $d018
+    and #%00110000
+    cmp #%00010000
+    beq .ScrollCharBuffer2to1IncY
+    ; jsr ScrollCharBuffer2to1IncY
+    jmp .ScrollCharBuffer1to2IncY
+.ScrollCharBuffer2to1IncY
+    ; jsr ScrollCharBuffer1to2IncY
+.ScrollCharBuffer1to2IncY
+    lda ScrollY
+    cmp #$01
+    bne .NoFlipBuffersIncY
+    jsr FlipBuffers
+    jsr ScrollColorBufferIncY
+.NoFlipBuffersIncY
+
+.NoScrollingIncY
     lda ScrollingIncX
     beq .NoScrollingIncX
 
     lda ScrollX
     and #1
-    bne .SkipParallax
+    bne .SkipParallaxIncX
     lda CharacterSet+(238*8)+0
     rol a
     rol CharacterSet+(238*8)+0
@@ -89,29 +137,27 @@ NoFire:
     lda CharacterSet+(238*8)+7
     rol a
     rol CharacterSet+(238*8)+7
-.SkipParallax
-
+.SkipParallaxIncX
     dec ScrollingIncX
     jsr ScrollIncX
-
     
     cmp #$03
-    bne .ScrollCharBuffer1to2
+    bne .ScrollCharBuffer1to2IncX
     lda $d018
     and #%00110000
     cmp #%00010000
-    beq .ScrollCharBuffer2to1
+    beq .ScrollCharBuffer2to1IncX
     jsr ScrollCharBuffer2to1IncX
-    jmp .ScrollCharBuffer1to2
-.ScrollCharBuffer2to1
+    jmp .ScrollCharBuffer1to2IncX
+.ScrollCharBuffer2to1IncX
     jsr ScrollCharBuffer1to2IncX
-.ScrollCharBuffer1to2
+.ScrollCharBuffer1to2IncX
     lda ScrollX
     cmp #$01
-    bne .NoFlipBuffers
+    bne .NoFlipBuffersIncX
     jsr FlipBuffers
     jsr ScrollColorBufferIncX
-.NoFlipBuffers
+.NoFlipBuffersIncX
 
 .NoScrollingIncX:
 
@@ -123,7 +169,7 @@ Exit:
 ScrollX:
     db $01
 ScrollY:
-    db $00
+    db $01
 
 ScrollingIncX:
     db $00
@@ -459,6 +505,197 @@ ScrollCharBuffer2To1IncX:
 .StopCopyLines
     rts
 
+ScrollColorBufferIncY:
+    ldx #0
+.SaveTopLine
+    lda ColorBuffer+(0*40),x
+    pha 
+    inx 
+    cpx #40
+    bne .SaveTopLine
+
+    ldx #40
+.CopyLine0
+    lda ColorBuffer+(1*40)-1,x
+    sta ColorBuffer+(0*40)-1,x
+    dex 
+    bne .CopyLine0
+
+    ldx #40
+.CopyLine1
+    lda ColorBuffer+(2*40)-1,x
+    sta ColorBuffer+(1*40)-1,x
+    dex 
+    bne .CopyLine1
+
+    ldx #40
+.CopyLine2
+    lda ColorBuffer+(3*40)-1,x
+    sta ColorBuffer+(2*40)-1,x
+    dex 
+    bne .CopyLine2
+
+    ldx #40
+.CopyLine3
+    lda ColorBuffer+(3*40)-1,x
+    sta ColorBuffer+(2*40)-1,x
+    dex 
+    bne .CopyLine3
+
+    ldx #40
+.CopyLine4
+    lda ColorBuffer+(4*40)-1,x
+    sta ColorBuffer+(3*40)-1,x
+    dex 
+    bne .CopyLine4
+
+    ldx #40
+.CopyLine5
+    lda ColorBuffer+(5*40)-1,x
+    sta ColorBuffer+(4*40)-1,x
+    dex 
+    bne .CopyLine5
+
+    ldx #40
+.CopyLine6
+    lda ColorBuffer+(6*40)-1,x
+    sta ColorBuffer+(5*40)-1,x
+    dex 
+    bne .CopyLine6
+
+    ldx #40
+.CopyLine7
+    lda ColorBuffer+(7*40)-1,x
+    sta ColorBuffer+(6*40)-1,x
+    dex 
+    bne .CopyLine7
+
+    ldx #40
+.CopyLine8
+    lda ColorBuffer+(8*40)-1,x
+    sta ColorBuffer+(7*40)-1,x
+    dex 
+    bne .CopyLine8
+
+    ldx #40
+.CopyLine9
+    lda ColorBuffer+(9*40)-1,x
+    sta ColorBuffer+(8*40)-1,x
+    dex 
+    bne .CopyLine9
+
+    ldx #40
+.CopyLine10
+    lda ColorBuffer+(10*40)-1,x
+    sta ColorBuffer+(9*40)-1,x
+    dex 
+    bne .CopyLine10
+
+    ldx #40
+.CopyLine11
+    lda ColorBuffer+(11*40)-1,x
+    sta ColorBuffer+(10*40)-1,x
+    dex 
+    bne .CopyLine11
+
+    ldx #40
+.CopyLine12
+    lda ColorBuffer+(12*40)-1,x
+    sta ColorBuffer+(11*40)-1,x
+    dex 
+    bne .CopyLine12
+
+    ldx #40
+.CopyLine13
+    lda ColorBuffer+(13*40)-1,x
+    sta ColorBuffer+(12*40)-1,x
+    dex 
+    bne .CopyLine13
+
+    ldx #40
+.CopyLine14
+    lda ColorBuffer+(14*40)-1,x
+    sta ColorBuffer+(13*40)-1,x
+    dex 
+    bne .CopyLine14
+
+    ldx #40
+.CopyLine15
+    lda ColorBuffer+(15*40)-1,x
+    sta ColorBuffer+(14*40)-1,x
+    dex 
+    bne .CopyLine15
+
+    ldx #40
+.CopyLine16
+    lda ColorBuffer+(16*40)-1,x
+    sta ColorBuffer+(15*40)-1,x
+    dex 
+    bne .CopyLine16
+
+    ldx #40
+.CopyLine17
+    lda ColorBuffer+(17*40)-1,x
+    sta ColorBuffer+(16*40)-1,x
+    dex 
+    bne .CopyLine17
+
+    ldx #40
+.CopyLine18
+    lda ColorBuffer+(18*40)-1,x
+    sta ColorBuffer+(17*40)-1,x
+    dex 
+    bne .CopyLine18
+
+    ldx #40
+.CopyLine19
+    lda ColorBuffer+(19*40)-1,x
+    sta ColorBuffer+(18*40)-1,x
+    dex 
+    bne .CopyLine19
+
+    ldx #40
+.CopyLine20
+    lda ColorBuffer+(20*40)-1,x
+    sta ColorBuffer+(19*40)-1,x
+    dex 
+    bne .CopyLine20
+
+    ldx #40
+.CopyLine21
+    lda ColorBuffer+(21*40)-1,x
+    sta ColorBuffer+(20*40)-1,x
+    dex 
+    bne .CopyLine21
+
+    ldx #40
+.CopyLine22
+    lda ColorBuffer+(22*40)-1,x
+    sta ColorBuffer+(21*40)-1,x
+    dex 
+    bne .CopyLine22
+
+    ldx #40
+.CopyLine23
+    lda ColorBuffer+(23*40)-1,x
+    sta ColorBuffer+(22*40)-1,x
+    dex 
+    bne .CopyLine23
+
+    ldx #40
+.CopyLine24
+    lda ColorBuffer+(24*40)-1,x
+    sta ColorBuffer+(23*40)-1,x
+    dex 
+    bne .CopyLine24
+
+    ldx #40
+.StoreBottomLine
+    pla 
+    sta ColorBuffer+(24*40)-1,x
+    dex 
+    bne .StoreBottomLine
+    rts 
 ScrollColorBufferIncX:
     lda ColorBuffer+(0 * 40)+39
     pha 
