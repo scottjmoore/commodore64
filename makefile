@@ -15,10 +15,6 @@ run:
 	make
 	x64sc -model ntsc -autostart "scrolling.d64:scrolling.prg" &
 
-run-retroarch:
-	make
-	retroarch -D -L /usr/lib64/libretro/vice_x64sc_libretro.so ./scrolling.d64
-
 run-pal:
 	make
 	x64sc -model pal -autostart "scrolling.d64:scrolling.prg" &
